@@ -22,6 +22,12 @@ import {
 import { isExpired } from "@/lib/session/state";
 import type { ChatMessage, CoverageEntry } from "@/lib/types";
 
+// Questa route esegue fino a due chiamate LLM in sequenza (estrazione +
+// prossima domanda, oppure estrazione + sintesi con Opus al completamento):
+// il timeout di default di Vercel può essere troppo stretto, specialmente
+// per la sintesi finale su conversazioni lunghe.
+export const maxDuration = 60;
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ token: string }> }

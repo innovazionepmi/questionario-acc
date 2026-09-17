@@ -5,6 +5,10 @@ import { NotFoundScreen } from "@/components/session/NotFoundScreen";
 import { buildBookingUrl } from "@/lib/session/booking";
 import { loadOrInitializeSession } from "@/lib/session/access";
 
+// Al primo accesso genera la domanda di apertura con una chiamata LLM: il
+// timeout di default di Vercel può essere troppo stretto in caso di latenza.
+export const maxDuration = 60;
+
 export default async function QuestionnairePage({
   params,
 }: {
