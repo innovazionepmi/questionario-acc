@@ -2,6 +2,18 @@
 
 Ultimo aggiornamento: 2026-09-17.
 
+## Bug bloccante "C'è stato un problema nell'invio" — diagnosticato e risolto (2026-09-17)
+
+Una sessione di test reale (token `a606867d-4c48-4ef7-b147-0d824264806d`) è rimasta bloccata al turno 17+: ogni messaggio inviato, anche una semplice risposta, falliva con "C'è stato un problema nell'invio". Due ipotesi iniziali (timeout Vercel, vincolo CHECK su `coverage_state.objective_id` fermo a 1-16 dopo l'introduzione del 17° obiettivo) erano fix reali ma non la causa di questo blocco specifico.
+
+**Causa strutturale**: `app/api/session/[token]/turn/route.ts` non aveva alcun `try/catch`. Qualsiasi eccezione (es. una validazione Zod fallita sull'output strutturato del modello, resa più probabile su quella conversazione da un transcript "sporco" pieno di "ci sei?" ripetuti e una risposta troncata) causava un 500 muto, senza log utili né traccia visibile senza accesso alla dashboard Vercel.
+
+**Fix**: aggiunto try/catch attorno alla logica del turno, con log dettagliato lato server e il dettaglio dell'errore reale incluso nella risposta JSON (visibile anche in `components/chat/ChatClient.tsx`, appeso al messaggio d'errore) — diagnostica temporanea accettabile perché l'app è ancora in fase di test pre-lancio con un solo utente.
+
+**Verifica end-to-end riuscita**: creata una sessione di test pulita (token `9f190935-e177-4de5-900f-ad2576453b9a`) e portata a completamento naturale in 9 turni tramite browser reale contro la produzione. Recap generato correttamente, preferenza di contatto riconosciuta, webhook di completamento verso n8n partito con successo (esecuzione `3150`, status `success`). La pipeline end-to-end (estrazione → sintesi Opus → salvataggio → webhook) funziona correttamente in produzione con tutti i fix precedenti applicati (vincolo DB, `OBJECTIVE_COUNT` dinamico, max_tokens chiusura forzata, gate di chiusura sui due obiettivi 16+17).
+
+La sessione bloccata originale (`a606867d...`) è stata marcata `completata` manualmente durante il debug (uno script diagnostico ha eseguito la sintesi reale e scritto l'output su Supabase) — non richiede ulteriore intervento.
+
 ## ⚠️ AZIONE RICHIESTA — migrazione da applicare sul Supabase live
 
 Durante il test in produzione è emerso un bug reale: nessun vincolo di unicità su `(session_id, turn_number)` nella tabella `turns` permetteva a due richieste concorrenti sulla stessa sessione (es. apertura del link duplicata, uno scanner di sicurezza email che pre-visita il link prima del click reale) di generare **due volte** il turno di apertura — probabile causa della schermata bianca vista durante il test.

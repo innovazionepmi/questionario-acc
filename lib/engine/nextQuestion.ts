@@ -53,19 +53,19 @@ il nome (${lead.firstName ?? "il nome della persona"}) e l'azienda (${lead.compa
 fai la prima domanda. Non richiedere dati anagrafici già noti (nome, azienda, ruolo se già indicato).`
     : "";
 
-  const response = await client.messages.create({
+  const request = {
     model: getTurnModel(),
     max_tokens: 600,
     system: BASE_SYSTEM_PROMPT,
     messages: [
       {
-        role: "user",
+        role: "user" as const,
         content: `${openingNote}\n\nObiettivi ancora da coprire in questa sessione:\n${objectivesList}\n\nConversazione finora:\n${transcript(conversation)}\n\nGenera il prossimo messaggio da mostrare all'utente.`,
       },
     ],
-  });
+  };
 
-  return extractText(response);
+  return extractTextWithRetry(client, request);
 }
 
 /**
@@ -84,7 +84,7 @@ export async function generateForcedClosingQuestion(
     .map((o) => `- ${o.label} (spunto: "${o.anchorQuestion}")`)
     .join("\n");
 
-  const response = await client.messages.create({
+  const request = {
     model: getTurnModel(),
     max_tokens: 700,
     system: `${BASE_SYSTEM_PROMPT}\n\nQuesta è l'ultima domanda della sessione: l'intervista sta per chiudersi
@@ -93,19 +93,42 @@ riassuntiva, naturale e non elencata a punti, spiegando che è l'ultima domanda 
 del riepilogo.`,
     messages: [
       {
-        role: "user",
+        role: "user" as const,
         content: `Obiettivi mancanti più critici da chiedere ora, in un'unica domanda:\n${objectivesList}\n\nConversazione finora:\n${transcript(conversation)}\n\nGenera l'ultima domanda.`,
       },
     ],
-  });
+  };
 
-  return extractText(response);
+  return extractTextWithRetry(client, request);
 }
 
 function extractText(response: MessageResponse): string {
   const textBlock = response.content.find((block) => block.type === "text");
   if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Il modello non ha restituito testo per la prossima domanda");
+    const blockTypes = response.content.map((b) => b.type).join(",") || "(vuoto)";
+    throw new Error(
+      `Il modello non ha restituito testo per la prossima domanda (stop_reason=${response.stop_reason}, blocchi=${blockTypes})`
+    );
   }
   return textBlock.text.trim();
+}
+
+/**
+ * La mancanza di un blocco testuale nella risposta è un'anomalia rara ma
+ * osservata in produzione (nessun testo, nessun errore HTTP): un retry
+ * singolo è più economico che far fallire l'intero turno per un fluke
+ * occasionale del modello.
+ */
+async function extractTextWithRetry(
+  client: Anthropic,
+  request: Parameters<Anthropic["messages"]["create"]>[0]
+): Promise<string> {
+  try {
+    const response = await client.messages.create(request);
+    return extractText(response as MessageResponse);
+  } catch (err) {
+    console.error("Prima chiamata per la prossima domanda fallita, riprovo una volta:", err);
+    const response = await client.messages.create(request);
+    return extractText(response as MessageResponse);
+  }
 }
