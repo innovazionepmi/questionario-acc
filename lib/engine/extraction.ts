@@ -4,12 +4,13 @@ import { OBJECTIVES } from "./objectives";
 import type { ChatMessage, CoverageEntry, ObjectiveStatus } from "../types";
 
 const EXTRACTION_TOOL_NAME = "update_coverage";
+const OBJECTIVE_COUNT = OBJECTIVES.length;
 
 const coverageUpdateSchema = z.object({
   objectives: z
     .array(
       z.object({
-        objective_id: z.number().int().min(1).max(16),
+        objective_id: z.number().int().min(1).max(OBJECTIVE_COUNT),
         status: z.enum(["scoperto", "parziale", "coperto"]),
         extracted_content: z.string(),
       })
@@ -18,14 +19,14 @@ const coverageUpdateSchema = z.object({
 });
 
 const SYSTEM_PROMPT = `Sei un analista che valuta, dopo ogni scambio di un'intervista a una PMI italiana,
-quali dei 16 obiettivi informativi elencati sono stati coperti dalla conversazione fin qui.
+quali dei ${OBJECTIVE_COUNT} obiettivi informativi elencati sono stati coperti dalla conversazione fin qui.
 
 Sii severo: marca "coperto" solo se l'informazione raccolta è realmente utilizzabile e
 specifica (non un accenno generico). Marca "parziale" se l'argomento è stato toccato ma
 manca dettaglio concreto. Marca "scoperto" se non è stato affrontato o la risposta è stata
 troppo vaga per essere utile.
 
-Valuta TUTTI e 16 gli obiettivi ad ogni chiamata, sulla base dell'intera conversazione, non
+Valuta TUTTI e ${OBJECTIVE_COUNT} gli obiettivi ad ogni chiamata, sulla base dell'intera conversazione, non
 solo dell'ultimo messaggio. Se un obiettivo era già coperto in un turno precedente, mantieni
 lo stato invariato a meno che la conversazione non lo contraddica.
 
@@ -60,7 +61,7 @@ export async function extractCoverage(
     tools: [
       {
         name: EXTRACTION_TOOL_NAME,
-        description: "Registra lo stato di copertura aggiornato per ciascuno dei 16 obiettivi informativi.",
+        description: `Registra lo stato di copertura aggiornato per ciascuno dei ${OBJECTIVE_COUNT} obiettivi informativi.`,
         input_schema: {
           type: "object",
           properties: {
@@ -69,7 +70,7 @@ export async function extractCoverage(
               items: {
                 type: "object",
                 properties: {
-                  objective_id: { type: "integer", minimum: 1, maximum: 16 },
+                  objective_id: { type: "integer", minimum: 1, maximum: OBJECTIVE_COUNT },
                   status: { type: "string", enum: ["scoperto", "parziale", "coperto"] },
                   extracted_content: {
                     type: "string",

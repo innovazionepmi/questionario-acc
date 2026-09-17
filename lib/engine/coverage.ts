@@ -1,4 +1,4 @@
-import { CLOSING_OBJECTIVE_ID, OBJECTIVES, SCORED_OBJECTIVE_IDS } from "./objectives";
+import { OBJECTIVES, REQUIRED_CLOSING_OBJECTIVE_IDS, SCORED_OBJECTIVE_IDS } from "./objectives";
 import type { CoverageEntry, ObjectiveStatus } from "../types";
 
 export const MAX_USER_TURNS = 18;
@@ -23,11 +23,12 @@ export function computeCoverageScore(coverage: CoverageEntry[]): number {
   return totalPoints / SCORED_OBJECTIVE_IDS.length;
 }
 
+/** Vero quando entrambi gli obiettivi di chiusura (aspettative + preferenza di contatto) sono stati toccati. */
 export function isClosingObjectiveCovered(coverage: CoverageEntry[]): boolean {
-  return statusFor(coverage, CLOSING_OBJECTIVE_ID) !== "scoperto";
+  return REQUIRED_CLOSING_OBJECTIVE_IDS.every((id) => statusFor(coverage, id) !== "scoperto");
 }
 
-/** Condizione di completamento naturale: soglia raggiunta E obiettivo di chiusura toccato. */
+/** Condizione di completamento naturale: soglia raggiunta E obiettivi di chiusura toccati. */
 export function isNaturallyComplete(coverage: CoverageEntry[]): boolean {
   return (
     computeCoverageScore(coverage) >= COVERAGE_THRESHOLD &&
@@ -37,15 +38,19 @@ export function isNaturallyComplete(coverage: CoverageEntry[]): boolean {
 
 /**
  * Vero quando il prossimo turno da generare sarebbe il turno 18 (l'ultimo
- * consentito) e la copertura è ancora sotto soglia: in questo caso la
- * prossima domanda deve essere la chiusura forzata, non una domanda scelta
- * liberamente dal modello.
+ * consentito) e la sessione non è ancora pronta per completarsi naturalmente
+ * (soglia non raggiunta, o obiettivi di chiusura non ancora toccati): in
+ * questo caso la prossima domanda deve essere la chiusura forzata, non una
+ * domanda scelta liberamente dal modello.
  */
 export function shouldForceClosingQuestion(
   coverage: CoverageEntry[],
   turnCount: number
 ): boolean {
-  return turnCount === MAX_USER_TURNS - 1 && computeCoverageScore(coverage) < COVERAGE_THRESHOLD;
+  return (
+    turnCount === MAX_USER_TURNS - 1 &&
+    (computeCoverageScore(coverage) < COVERAGE_THRESHOLD || !isClosingObjectiveCovered(coverage))
+  );
 }
 
 /** Vero quando la sessione deve considerarsi conclusa dopo l'ultimo turno processato. */
@@ -61,7 +66,7 @@ export interface MissingObjective {
   status: ObjectiveStatus;
 }
 
-/** Obiettivi (1-16) non ancora pienamente coperti, scoperti prima dei parziali. */
+/** Obiettivi (1-17) non ancora pienamente coperti, scoperti prima dei parziali. */
 export function getMissingObjectives(coverage: CoverageEntry[]): MissingObjective[] {
   const severity: Record<ObjectiveStatus, number> = { scoperto: 0, parziale: 1, coperto: 2 };
   return OBJECTIVES.filter((o) => statusFor(coverage, o.id) !== "coperto")

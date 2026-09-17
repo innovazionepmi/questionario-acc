@@ -113,12 +113,20 @@ export const OBJECTIVES: Objective[] = [
     label: "Aspettative sulla call",
     anchorQuestion: "Cosa vorresti portarti a casa dalla call gratuita?",
   },
+  {
+    id: 17,
+    dimension: "Chiusura",
+    label: "Preferenza di contatto",
+    anchorQuestion:
+      "Preferisci che vi ricontattiamo noi telefonicamente per fissare la consulenza, oppure preferisci ricevere questo riepilogo via email e prendere tu l'iniziativa quando sei pronto?",
+  },
 ];
 
 export const SCORED_OBJECTIVE_IDS = OBJECTIVES.filter((o) => o.id <= 15).map(
   (o) => o.id
 );
-export const CLOSING_OBJECTIVE_ID = 16;
+/** Obiettivi di chiusura: devono essere entrambi toccati prima che la sessione possa completarsi naturalmente. */
+export const REQUIRED_CLOSING_OBJECTIVE_IDS = [16, 17];
 
 export function getObjective(id: number): Objective {
   const obj = OBJECTIVES.find((o) => o.id === id);

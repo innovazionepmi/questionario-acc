@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RecapScreen } from "../recap/RecapScreen";
 import { ExpiredScreen } from "../session/ExpiredScreen";
 import { Composer } from "./Composer";
@@ -34,6 +34,11 @@ export function ChatClient({
   const [recap, setRecap] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
   const [loadingWelcome, setLoadingWelcome] = useState(initialTurns.length === 0);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, sending]);
 
   // Rete di sicurezza: se il primo render arriva senza la domanda di apertura
   // (cold start, scanner email che pre-visita il link, ecc.), recupera lo
@@ -134,6 +139,7 @@ export function ChatClient({
             </div>
           </div>
         )}
+        <div ref={bottomRef} />
       </div>
       {error && <p className="px-4 pb-2 text-sm text-red-700">{error}</p>}
       <Composer disabled={sending || loadingWelcome} onSend={handleSend} />

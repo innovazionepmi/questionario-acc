@@ -86,7 +86,7 @@ export async function generateForcedClosingQuestion(
 
   const response = await client.messages.create({
     model: getTurnModel(),
-    max_tokens: 400,
+    max_tokens: 700,
     system: `${BASE_SYSTEM_PROMPT}\n\nQuesta è l'ultima domanda della sessione: l'intervista sta per chiudersi
 per raggiunto limite di turni. Accorpa gli obiettivi indicati in un'unica domanda
 riassuntiva, naturale e non elencata a punti, spiegando che è l'ultima domanda prima

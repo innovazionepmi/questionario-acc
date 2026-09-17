@@ -36,30 +36,34 @@ describe("computeCoverageScore", () => {
 });
 
 describe("isNaturallyComplete", () => {
-  it("richiede sia la soglia 75% sia l'obiettivo 16 toccato", () => {
+  it("richiede sia la soglia 75% sia entrambi gli obiettivi di chiusura (16 e 17) toccati", () => {
     const entries: Record<number, "coperto"> = {};
     for (let i = 1; i <= 12; i++) entries[i] = "coperto"; // 12/15 = 0.8 >= 0.75
-    expect(isNaturallyComplete(coverage(entries))).toBe(false); // manca obiettivo 16
-    expect(isNaturallyComplete(coverage({ ...entries, 16: "parziale" }))).toBe(true);
+    expect(isNaturallyComplete(coverage(entries))).toBe(false); // mancano 16 e 17
+    expect(isNaturallyComplete(coverage({ ...entries, 16: "parziale" }))).toBe(false); // manca 17
+    expect(isNaturallyComplete(coverage({ ...entries, 16: "parziale", 17: "coperto" }))).toBe(true);
   });
 
-  it("è falso sotto soglia anche con obiettivo 16 coperto", () => {
-    const entries = coverage({ 1: "coperto", 2: "coperto", 16: "coperto" });
+  it("è falso sotto soglia anche con entrambi gli obiettivi di chiusura coperti", () => {
+    const entries = coverage({ 1: "coperto", 2: "coperto", 16: "coperto", 17: "coperto" });
     expect(isNaturallyComplete(entries)).toBe(false);
   });
 });
 
 describe("shouldForceClosingQuestion", () => {
-  it("scatta solo al turno 17 (per generare il turno 18) sotto soglia", () => {
+  it("scatta solo al turno 17 (per generare il turno 18) sotto soglia o senza chiusura", () => {
     expect(shouldForceClosingQuestion([], 17)).toBe(true);
     expect(shouldForceClosingQuestion([], 16)).toBe(false);
     expect(shouldForceClosingQuestion([], 18)).toBe(false);
   });
 
-  it("non scatta se la copertura è già sopra soglia", () => {
+  it("non scatta solo quando soglia raggiunta E chiusura completa", () => {
     const entries: Record<number, "coperto"> = {};
     for (let i = 1; i <= 12; i++) entries[i] = "coperto";
-    expect(shouldForceClosingQuestion(coverage(entries), 17)).toBe(false);
+    expect(shouldForceClosingQuestion(coverage(entries), 17)).toBe(true); // chiusura mancante
+    expect(shouldForceClosingQuestion(coverage({ ...entries, 16: "coperto", 17: "coperto" }), 17)).toBe(
+      false
+    );
   });
 });
 
@@ -72,7 +76,7 @@ describe("isSessionComplete", () => {
   it("è vero prima del guardrail se la copertura naturale è raggiunta", () => {
     const entries: Record<number, "coperto"> = {};
     for (let i = 1; i <= 12; i++) entries[i] = "coperto";
-    expect(isSessionComplete(coverage({ ...entries, 16: "coperto" }), 10)).toBe(true);
+    expect(isSessionComplete(coverage({ ...entries, 16: "coperto", 17: "coperto" }), 10)).toBe(true);
   });
 
   it("è falso prima del guardrail senza copertura naturale", () => {

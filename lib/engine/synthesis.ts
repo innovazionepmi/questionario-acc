@@ -39,7 +39,9 @@ conclusa: ora devi produrre due output a partire dalla conversazione completa.
    rimasti scoperti o parziali con una breve motivazione, così Emilio sa cosa chiedere lui
    stesso. Nelle note_libere segnala eventuali campanelli degni di nota (urgenza percepita,
    obiezioni implicite, livello di readiness culturale) come osservazioni testuali libere,
-   mai come punteggi inventati.
+   mai come punteggi inventati. Se dalla conversazione risulta la preferenza della persona su
+   come essere ricontattata (telefonicamente vs via email), riportala SEMPRE come prima voce
+   di note_libere, in modo esplicito e riconoscibile (es. "Preferenza di contatto: ...").
 
 Rispondi esclusivamente tramite lo strumento fornito.`;
 
