@@ -90,7 +90,9 @@ export function ChatClient({
       }
 
       if (!res.ok) {
-        setError("C'è stato un problema nell'invio. Riprova tra un momento.");
+        const errorBody = await res.json().catch(() => null);
+        const debugDetail = errorBody?.detail ? ` [debug: ${errorBody.detail}]` : "";
+        setError(`C'è stato un problema nell'invio. Riprova tra un momento.${debugDetail}`);
         return;
       }
 
