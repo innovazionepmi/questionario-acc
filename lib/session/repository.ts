@@ -59,14 +59,34 @@ export async function appendTurn(
 
   const nextNumber = ((lastTurn as { turn_number: number } | null)?.turn_number ?? 0) + 1;
 
+  // Upsert con ignoreDuplicates invece di insert: due richieste concorrenti
+  // sulla stessa sessione (es. apertura del link doppia, scanner email) non
+  // devono poter scrivere due volte lo stesso turn_number. Se questa
+  // richiesta perde la corsa, il conflitto viene ignorato silenziosamente e
+  // si ritorna la riga già scritta dall'altra richiesta.
   const { data, error } = await supabase
     .from("turns")
-    .insert({ session_id: sessionId, turn_number: nextNumber, role, content })
-    .select("*")
-    .single();
+    .upsert(
+      { session_id: sessionId, turn_number: nextNumber, role, content },
+      { onConflict: "session_id,turn_number", ignoreDuplicates: true }
+    )
+    .select("*");
 
   if (error) throw error;
-  return data as Turn;
+
+  if (data && data.length > 0) {
+    return data[0] as Turn;
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("turns")
+    .select("*")
+    .eq("session_id", sessionId)
+    .eq("turn_number", nextNumber)
+    .single();
+
+  if (existingError) throw existingError;
+  return existing as Turn;
 }
 
 export async function getCoverage(sessionId: string): Promise<CoverageEntry[]> {

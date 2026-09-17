@@ -2,6 +2,14 @@
 
 Ultimo aggiornamento: 2026-09-17.
 
+## ⚠️ AZIONE RICHIESTA — migrazione da applicare sul Supabase live
+
+Durante il test in produzione è emerso un bug reale: nessun vincolo di unicità su `(session_id, turn_number)` nella tabella `turns` permetteva a due richieste concorrenti sulla stessa sessione (es. apertura del link duplicata, uno scanner di sicurezza email che pre-visita il link prima del click reale) di generare **due volte** il turno di apertura — probabile causa della schermata bianca vista durante il test.
+
+**Da eseguire nell'SQL Editor di Supabase, sul progetto live**: il contenuto di `supabase/migrations/0002_turns_unique_constraint.sql`. Rimuove eventuali duplicati già presenti e aggiunge il vincolo che rende impossibile la duplicazione da qui in poi. Il codice (`lib/session/repository.ts`) è già stato aggiornato per gestire il conflitto in modo pulito invece di duplicare o fallire — ma la modifica ha effetto reale solo dopo aver applicato questa migrazione, e va comunque ridistribuita (commit + push + deploy) perché sia attiva su Vercel.
+
+Insieme a questa, è stata aggiunta anche una rete di sicurezza lato client (`components/chat/ChatClient.tsx`): se il primo caricamento arriva senza la domanda di apertura per qualsiasi motivo, il client la recupera automaticamente invece di mostrare una chat vuota, con un piccolo indicatore di caricamento nel frattempo. Nel farlo è stato trovato e corretto anche un bug (innocuo solo perché limitato al dev mode) legato al doppio-invocamento degli effetti di React StrictMode: un `useRef` di guardia impediva alla seconda invocazione di eseguire il fetch, mentre la prima veniva cancellata dal cleanup — risultato, il recupero non aggiornava mai lo stato. Anche questo è già corretto.
+
 ## Cosa è stato costruito
 
 Scaffold completo secondo il piano approvato (vedi `C:\Users\Emilio\.claude\plans\jolly-jingling-nest.md`):
