@@ -131,11 +131,11 @@ export function ChatClient({
   if (recap) return <RecapScreen recapText={recap} bookingUrl={bookingUrl} />;
 
   return (
-    <div className="mx-auto flex h-full min-h-screen w-full max-w-2xl flex-col">
-      <div className="p-4">
+    <div className="mx-auto flex h-dvh w-full max-w-2xl flex-col">
+      <div className="shrink-0 p-4">
         <ProgressHint turnCount={turnCount} />
       </div>
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
         {messages.length === 0 && loadingWelcome && (
           <div className="flex justify-start">
             <div className="rounded-2xl rounded-bl-sm border border-navy/10 bg-white px-4 py-3 text-navy/40">
@@ -149,13 +149,13 @@ export function ChatClient({
         {sending && (
           <div className="flex justify-start">
             <div className="rounded-2xl rounded-bl-sm border border-navy/10 bg-white px-4 py-3 text-navy/40">
-              {slowWait ? "Ci sto mettendo un attimo in più, sto preparando la risposta…" : "…"}
+              {slowWait ? "Sto scrivendo la risposta…" : "…"}
             </div>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
-      {error && <p className="px-4 pb-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="shrink-0 px-4 pb-2 text-sm text-red-700">{error}</p>}
       <Composer disabled={sending || loadingWelcome} onSend={handleSend} />
     </div>
   );

@@ -20,14 +20,28 @@ const briefSchema = z.object({
 const RECAP_SYSTEM_PROMPT = `Sei l'assistente di InnovazionePMI. L'intervista con questa PMI italiana è
 conclusa: scrivi il recap che l'utente vedrà a schermo, PRIMA di prenotare la call gratuita.
 
-Deve funzionare come uno specchio — "ecco cosa ho capito della tua situazione" — mai come
-un'anteprima di analisi o un mini-report con raccomandazioni. Nessun punteggio, nessuna
-diagnosi, nessun numero stimato: quelli arrivano solo nella call. Tono che dà valore
-percepito ("mi ha ascoltato davvero") senza cannibalizzare la consulenza. Pochi paragrafi,
-leggibile in 30 secondi. Scritto in italiano, rivolto direttamente alla persona (tu).
-Testo semplice: niente markdown, niente elenchi puntati, niente grassetti o titoli.
+Il recap ha DUE parti, in quest'ordine.
+
+PARTE 1 — specchio: 2 paragrafi brevi (circa 120 parole in tutto) che restituiscono con
+parole sue la situazione, il problema che gli pesa di più e il contesto (strumenti, persone,
+modo di lavorare). Fedele a ciò che ha detto, senza inventare. Non aprire con "Ecco cosa ho
+capito": la pagina ha già questo titolo, parti direttamente dal contenuto.
+
+PARTE 2 — aree di intervento. Introdotta da una riga che dice "Dove potremmo intervenire:",
+poi 2-3 aree, una per paragrafo breve (massimo 50 parole), ciascuna collegata a qualcosa che la persona ha
+detto davvero. Per ogni area indica DOVE agire e PERCHÉ è la leva giusta per cambiare il
+comportamento che ha descritto (es. "Il passaggio manuale tra X e Y: è lì che si perdono
+informazioni e tempo"). Parti dalla più impattante. Queste aree sono spunti di direzione,
+non un piano: NON proporre soluzioni tecniche dettagliate, NON nominare strumenti o
+software, NON indicare costi, tempi, percentuali, punteggi o diagnosi di maturità. Il
+"come" e il "quanto" si costruiscono insieme nella call: puoi dirlo in una frase finale.
+
+Tono: dà valore percepito ("mi ha ascoltato davvero e sa dove guardare") senza
+cannibalizzare la consulenza. Italiano, rivolto direttamente alla persona (tu), leggibile
+in un minuto. Testo semplice: niente markdown, niente elenchi puntati o numerati, niente
+grassetti o titoli.
 Se dalla conversazione risulta come la persona preferisce essere ricontattata
-(telefonicamente vs via email), chiudi confermandolo in una frase.
+(telefonicamente vs via email), chiudi con una frase che lo conferma.
 Rispondi solo con il testo del recap.`;
 
 const BRIEF_SYSTEM_PROMPT = `Sei l'assistente di InnovazionePMI. L'intervista con questa PMI italiana è
@@ -78,7 +92,7 @@ export async function generateRecap(conversation: ChatMessage[], lead: LeadInfo)
 
   const response = await client.messages.create({
     model: getSynthesisModel(),
-    max_tokens: 1200,
+    max_tokens: 1800,
     system: RECAP_SYSTEM_PROMPT,
     messages: [
       {
