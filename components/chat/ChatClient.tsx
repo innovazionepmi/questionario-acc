@@ -34,11 +34,23 @@ export function ChatClient({
   const [recap, setRecap] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
   const [loadingWelcome, setLoadingWelcome] = useState(initialTurns.length === 0);
+  const [slowWait, setSlowWait] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, sending]);
+  }, [messages, sending, slowWait]);
+
+  // Il turno finale (generazione del riepilogo) può richiedere 15-30 secondi:
+  // senza un segnale l'utente penserebbe che la chat si sia bloccata.
+  useEffect(() => {
+    if (!sending) return;
+    const timer = setTimeout(() => setSlowWait(true), 8000);
+    return () => {
+      clearTimeout(timer);
+      setSlowWait(false);
+    };
+  }, [sending]);
 
   // Rete di sicurezza: se il primo render arriva senza la domanda di apertura
   // (cold start, scanner email che pre-visita il link, ecc.), recupera lo
@@ -137,7 +149,7 @@ export function ChatClient({
         {sending && (
           <div className="flex justify-start">
             <div className="rounded-2xl rounded-bl-sm border border-navy/10 bg-white px-4 py-3 text-navy/40">
-              …
+              {slowWait ? "Ci sto mettendo un attimo in più, sto preparando la risposta…" : "…"}
             </div>
           </div>
         )}
